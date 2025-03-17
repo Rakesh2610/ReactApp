@@ -70,6 +70,52 @@ export function useMenuItems(categoryId?: string) {
           err instanceof Error ? err : new Error("An unknown error occurred"),
         );
         console.error("Error fetching menu items:", err);
+
+        // Fallback to mock data if there's an error
+        setItems([
+          {
+            id: "pizza-1",
+            name: "Margherita Pizza",
+            description:
+              "Classic pizza with tomato sauce, mozzarella, and basil",
+            price: 12.99,
+            image:
+              "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=500&q=80",
+            categoryId: "pizza",
+            dietaryInfo: { vegetarian: true },
+          },
+          {
+            id: "pizza-2",
+            name: "Pepperoni Pizza",
+            description: "Traditional pizza topped with pepperoni slices",
+            price: 14.99,
+            image:
+              "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=500&q=80",
+            categoryId: "pizza",
+            dietaryInfo: { spicy: true },
+          },
+          {
+            id: "coffee-1",
+            name: "Cappuccino",
+            description: "Espresso with steamed milk and foam",
+            price: 4.5,
+            image:
+              "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=500&q=80",
+            categoryId: "coffee",
+            dietaryInfo: { vegetarian: true, glutenFree: true },
+          },
+          {
+            id: "salad-1",
+            name: "Caesar Salad",
+            description:
+              "Romaine lettuce, croutons, parmesan cheese with Caesar dressing",
+            price: 8.99,
+            image:
+              "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=500&q=80",
+            categoryId: "salads",
+            dietaryInfo: { vegetarian: true },
+          },
+        ]);
       } finally {
         setLoading(false);
       }

@@ -2,12 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, User, Search } from "lucide-react";
+import { ShoppingBag, User, Search, ShoppingCart } from "lucide-react";
 import AuthModal from "./auth/AuthModal";
 import MenuGrid from "./menu/MenuGrid";
 import CartDrawer from "./cart/CartDrawer";
 import ItemDetailModal from "./menu/ItemDetailModal";
 import { useCart } from "@/hooks/useCart";
+import { useNavigate } from "react-router-dom";
 
 interface HomeProps {
   isLoggedIn?: boolean;
@@ -21,6 +22,7 @@ const Home: React.FC<HomeProps> = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showCartDrawer, setShowCartDrawer] = useState(false);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Mock food item for the detail modal
   const mockItem = {
@@ -95,10 +97,19 @@ const Home: React.FC<HomeProps> = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            <CartDrawer
-              isOpen={showCartDrawer}
-              onClose={() => setShowCartDrawer(!showCartDrawer)}
-            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="relative"
+              onClick={() => navigate("/cart")}
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {cartItems.length > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                  {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+                </span>
+              )}
+            </Button>
 
             {isLoggedIn ? (
               <Button

@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, History } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface OrderSuccessProps {
   orderId?: string;
@@ -11,6 +12,8 @@ const OrderSuccess: React.FC<OrderSuccessProps> = ({
   orderId = "ORD" + Math.floor(Math.random() * 10000),
   onClose = () => {},
 }) => {
+  const navigate = useNavigate();
+
   // Generate a random pickup time between 15-30 minutes from now
   const pickupMinutes = Math.floor(Math.random() * 16) + 15;
   const pickupTime = new Date(Date.now() + pickupMinutes * 60000);
@@ -33,7 +36,7 @@ const OrderSuccess: React.FC<OrderSuccessProps> = ({
       <div className="bg-gray-50 w-full max-w-md rounded-lg p-4 mb-6">
         <div className="flex justify-between mb-2">
           <span className="text-gray-600">Order ID:</span>
-          <span className="font-medium">{orderId}</span>
+          <span className="font-medium">{orderId.slice(-6)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">Estimated Pickup:</span>
@@ -46,6 +49,19 @@ const OrderSuccess: React.FC<OrderSuccessProps> = ({
       <div className="space-y-3 w-full max-w-md">
         <Button className="w-full" onClick={onClose}>
           Back to Menu
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-center"
+          onClick={() => {
+            navigate("/cart");
+            // Switch to history tab
+            const historyTabEvent = new CustomEvent("switchToHistoryTab");
+            document.dispatchEvent(historyTabEvent);
+          }}
+        >
+          <History className="mr-2 h-4 w-4" />
+          View Order History
         </Button>
       </div>
     </div>

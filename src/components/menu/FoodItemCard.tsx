@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/hooks/useCart";
+import FavoriteButton from "./FavoriteButton";
 
 interface DietaryInfo {
   vegetarian?: boolean;
@@ -19,6 +20,10 @@ interface FoodItemCardProps {
   price?: number;
   image?: string;
   dietaryInfo?: DietaryInfo;
+  isVegetarian?: boolean;
+  isVegan?: boolean;
+  isGlutenFree?: boolean;
+  isSpicy?: boolean;
   onAddToCart?: (id: string) => void;
   onViewDetails?: (id: string) => void;
 }
@@ -30,6 +35,10 @@ const FoodItemCard = ({
   price = 8.99,
   image = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80",
   dietaryInfo = { spicy: true },
+  isVegetarian = false,
+  isVegan = false,
+  isGlutenFree = false,
+  isSpicy = false,
   onAddToCart = () => {},
   onViewDetails = () => {},
 }: FoodItemCardProps) => {
@@ -76,7 +85,7 @@ const FoodItemCard = ({
       <div className="relative">
         <img src={image} alt={name} className="w-full h-40 object-cover" />
         <div className="absolute top-2 right-2 flex gap-1">
-          {dietaryInfo.vegetarian && (
+          {(dietaryInfo?.vegetarian || isVegetarian) && (
             <Badge
               variant="secondary"
               className="bg-green-100 text-green-800 border-green-200"
@@ -84,7 +93,7 @@ const FoodItemCard = ({
               Veg
             </Badge>
           )}
-          {dietaryInfo.vegan && (
+          {(dietaryInfo?.vegan || isVegan) && (
             <Badge
               variant="secondary"
               className="bg-green-100 text-green-800 border-green-200"
@@ -92,7 +101,7 @@ const FoodItemCard = ({
               Vegan
             </Badge>
           )}
-          {dietaryInfo.glutenFree && (
+          {(dietaryInfo?.glutenFree || isGlutenFree) && (
             <Badge
               variant="secondary"
               className="bg-blue-100 text-blue-800 border-blue-200"
@@ -100,7 +109,7 @@ const FoodItemCard = ({
               GF
             </Badge>
           )}
-          {dietaryInfo.spicy && (
+          {(dietaryInfo?.spicy || isSpicy) && (
             <Badge
               variant="secondary"
               className="bg-red-100 text-red-800 border-red-200"
@@ -109,12 +118,15 @@ const FoodItemCard = ({
             </Badge>
           )}
         </div>
+        <div className="absolute top-2 left-2">
+          <FavoriteButton menuItemId={id} />
+        </div>
       </div>
 
       <div className="p-4 flex-grow flex flex-col">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-semibold text-lg truncate">{name}</h3>
-          <span className="font-bold text-lg">${price.toFixed(2)}</span>
+          <span className="font-bold text-lg">₹{price.toFixed(2)}</span>
         </div>
 
         <p className="text-gray-600 text-sm line-clamp-2 mb-4">{description}</p>

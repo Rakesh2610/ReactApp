@@ -24,6 +24,236 @@ export type Database = {
         }
         Relationships: []
       }
+      cart_items: {
+        Row: {
+          created_at: string | null
+          customizations: string[] | null
+          id: string
+          menu_item_id: string
+          quantity: number
+          special_instructions: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          customizations?: string[] | null
+          id?: string
+          menu_item_id: string
+          quantity?: number
+          special_instructions?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          customizations?: string[] | null
+          id?: string
+          menu_item_id?: string
+          quantity?: number
+          special_instructions?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          image: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      favorite_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          menu_item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          menu_item_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          menu_item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_items: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image: string | null
+          is_gluten_free: boolean | null
+          is_spicy: boolean | null
+          is_vegan: boolean | null
+          is_vegetarian: boolean | null
+          name: string
+          price: number
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image?: string | null
+          is_gluten_free?: boolean | null
+          is_spicy?: boolean | null
+          is_vegan?: boolean | null
+          is_vegetarian?: boolean | null
+          name: string
+          price: number
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image?: string | null
+          is_gluten_free?: boolean | null
+          is_spicy?: boolean | null
+          is_vegan?: boolean | null
+          is_vegetarian?: boolean | null
+          name?: string
+          price?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          created_at: string | null
+          customizations: string[] | null
+          id: string
+          menu_item_id: string
+          name: string
+          order_id: string
+          price: number
+          quantity: number
+          special_instructions: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customizations?: string[] | null
+          id?: string
+          menu_item_id: string
+          name: string
+          order_id: string
+          price: number
+          quantity?: number
+          special_instructions?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customizations?: string[] | null
+          id?: string
+          menu_item_id?: string
+          name?: string
+          order_id?: string
+          price?: number
+          quantity?: number
+          special_instructions?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_number: string | null
+          payment_method: string | null
+          pickup_time: string | null
+          special_instructions: string | null
+          status: string
+          total_amount: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_number?: string | null
+          payment_method?: string | null
+          pickup_time?: string | null
+          special_instructions?: string | null
+          status?: string
+          total_amount: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_number?: string | null
+          payment_method?: string | null
+          pickup_time?: string | null
+          special_instructions?: string | null
+          status?: string
+          total_amount?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

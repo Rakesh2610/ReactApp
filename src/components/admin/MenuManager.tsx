@@ -40,6 +40,7 @@ type MenuItem = {
   is_vegetarian: boolean;
   is_available: boolean;
   category_name?: string;
+  available?: boolean; // For compatibility with AdminDashboard
 };
 
 type Category = {
@@ -459,9 +460,11 @@ const MenuManager: React.FC = () => {
                     <TableCell>₹{item.price.toFixed(2)}</TableCell>
                     <TableCell>
                       <span
-                        className={`px-2 py-1 rounded-full text-xs ${item.is_available ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                        className={`px-2 py-1 rounded-full text-xs ${item.is_available || item.available ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
                       >
-                        {item.is_available ? "Available" : "Unavailable"}
+                        {item.is_available || item.available
+                          ? "Available"
+                          : "Unavailable"}
                       </span>
                     </TableCell>
                     <TableCell>

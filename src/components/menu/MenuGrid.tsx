@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, SlidersHorizontal, Heart } from "lucide-react";
 import CategoryTabs from "./CategoryTabs";
 import FoodItemCard from "./FoodItemCard";
 import { useCart } from "@/hooks/useCart";
+import FavoritesTab from "./FavoritesTab";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface FoodItem {
   id: string;
@@ -33,8 +35,10 @@ const MenuGrid: React.FC<MenuGridProps> = ({
   onAddToCart = () => {},
   onViewDetails = () => {},
 }) => {
+  const { user } = useAuth();
   const { addToCart } = useCart();
   const [activeCategory, setActiveCategory] = useState("all");
+  const [activeTab, setActiveTab] = useState("all");
   const { items: fetchedItems, loading } = useMenuItems(
     activeCategory === "all" ? undefined : activeCategory,
   );
@@ -90,7 +94,7 @@ const MenuGrid: React.FC<MenuGridProps> = ({
       ]);
     }
   }, [fetchedItems, loading]);
-  // activeCategory is now defined in the component function
+
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter items based on active category and search query
@@ -120,6 +124,10 @@ const MenuGrid: React.FC<MenuGridProps> = ({
     onAddToCart(itemId);
   };
 
+  const handleItemClick = (itemId: string) => {
+    onViewDetails(itemId);
+  };
+
   return (
     <div className="w-full bg-gray-50 min-h-[800px]">
       {/* Search and filter bar */}
@@ -140,56 +148,117 @@ const MenuGrid: React.FC<MenuGridProps> = ({
         </div>
       </div>
 
-      {/* Category tabs */}
-      <CategoryTabs
-        activeCategory={activeCategory}
-        onCategoryChange={setActiveCategory}
-      />
+      {user && (
+        <div className="p-4 max-w-7xl mx-auto">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="all">All Items</TabsTrigger>
+              <TabsTrigger value="favorites" className="flex items-center">
+                <Heart className="mr-2 h-4 w-4" /> Favorites
+              </TabsTrigger>
+            </TabsList>
 
-      {/* Menu items grid */}
-      <div className="p-4 max-w-7xl mx-auto">
-        <Tabs value={activeCategory} className="w-full">
-          {[
-            "pizza",
-            "coffee",
-            "salads",
-            "desserts",
-            "meat",
-            "sandwiches",
-            "soups",
-            "icecream",
-            "fruits",
-            "drinks",
-          ].map((category) => (
-            <TabsContent key={category} value={category} className="mt-0">
-              {filteredItems.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-                  {filteredItems.map((item) => (
-                    <FoodItemCard
-                      key={item.id}
-                      id={item.id}
-                      name={item.name}
-                      description={item.description}
-                      price={item.price}
-                      image={item.image}
-                      dietaryInfo={item.dietaryInfo}
-                      onAddToCart={handleAddToCart}
-                      onViewDetails={onViewDetails}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-64 text-center">
-                  <p className="text-gray-500 mb-2">No items found</p>
-                  <p className="text-gray-400 text-sm">
-                    Try adjusting your search or filters
-                  </p>
-                </div>
-              )}
+            <TabsContent value="all" className="mt-0">
+              {/* Category tabs */}
+              <CategoryTabs
+                activeCategory={activeCategory}
+                onCategoryChange={setActiveCategory}
+              />
+
+              {/* Menu items grid */}
+              <div className="mt-4">
+                {filteredItems.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {filteredItems.map((item) => (
+                      <FoodItemCard
+                        key={item.id}
+                        id={item.id}
+                        name={item.name}
+                        description={item.description}
+                        price={item.price}
+                        image={item.image}
+                        dietaryInfo={item.dietaryInfo}
+                        onAddToCart={handleAddToCart}
+                        onViewDetails={handleItemClick}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-64 text-center">
+                    <p className="text-gray-500 mb-2">No items found</p>
+                    <p className="text-gray-400 text-sm">
+                      Try adjusting your search or filters
+                    </p>
+                  </div>
+                )}
+              </div>
             </TabsContent>
-          ))}
-        </Tabs>
-      </div>
+
+            <TabsContent value="favorites" className="mt-0">
+              <FavoritesTab onItemClick={handleItemClick} />
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
+
+      {!user && (
+        <>
+          {/* Category tabs */}
+          <CategoryTabs
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+          />
+
+          {/* Menu items grid */}
+          <div className="p-4 max-w-7xl mx-auto">
+            <Tabs value={activeCategory} className="w-full">
+              {[
+                "pizza",
+                "coffee",
+                "salads",
+                "desserts",
+                "meat",
+                "sandwiches",
+                "soups",
+                "icecream",
+                "fruits",
+                "drinks",
+              ].map((category) => (
+                <TabsContent key={category} value={category} className="mt-0">
+                  {filteredItems.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+                      {filteredItems.map((item) => (
+                        <FoodItemCard
+                          key={item.id}
+                          id={item.id}
+                          name={item.name}
+                          description={item.description}
+                          price={item.price}
+                          image={item.image}
+                          dietaryInfo={item.dietaryInfo}
+                          onAddToCart={handleAddToCart}
+                          onViewDetails={handleItemClick}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-64 text-center">
+                      <p className="text-gray-500 mb-2">No items found</p>
+                      <p className="text-gray-400 text-sm">
+                        Try adjusting your search or filters
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
+        </>
+      )}
     </div>
   );
 };

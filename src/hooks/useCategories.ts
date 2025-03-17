@@ -40,6 +40,20 @@ export function useCategories() {
           err instanceof Error ? err : new Error("An unknown error occurred"),
         );
         console.error("Error fetching categories:", err);
+
+        // Fallback to mock data if there's an error
+        setCategories([
+          { id: "pizza", name: "Pizza" },
+          { id: "coffee", name: "Coffee" },
+          { id: "salads", name: "Salads" },
+          { id: "desserts", name: "Desserts" },
+          { id: "meat", name: "Meat" },
+          { id: "sandwiches", name: "Sandwiches" },
+          { id: "soups", name: "Soups" },
+          { id: "icecream", name: "Ice Cream" },
+          { id: "fruits", name: "Fruits" },
+          { id: "drinks", name: "Drinks" },
+        ]);
       } finally {
         setLoading(false);
       }

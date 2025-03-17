@@ -1,15 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-import { CreditCard, IndianRupee } from "lucide-react";
+import {
+  CreditCard,
+  IndianRupee,
+  Clock,
+  MapPin,
+  Truck,
+  Home,
+  Store,
+} from "lucide-react";
 import { useCart } from "@/hooks/useCart";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { format, addMinutes } from "date-fns";
 
 interface CheckoutFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (orderId: string) => void;
   onCancel?: () => void;
 }
 
@@ -18,20 +36,61 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
   onCancel = () => {},
 }) => {
   const { toast } = useToast();
-  const { total, clearCart } = useCart();
-  const [paymentMethod, setPaymentMethod] = useState<"upi" | "card">("upi");
+  const { cartItems, total, submitOrder } = useCart();
+  const [paymentMethod, setPaymentMethod] = useState<"upi" | "card" | "cash">(
+    "upi",
+  );
+  const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">(
+    "pickup",
+  );
   const [upiId, setUpiId] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [cardName, setCardName] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvv, setCardCvv] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pickupTime, setPickupTime] = useState("15");
+  const [specialInstructions, setSpecialInstructions] = useState("");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
+  const [activeTab, setActiveTab] = useState<"order" | "payment">("order");
+  const [estimatedTime, setEstimatedTime] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Calculate and format the estimated pickup/delivery time
+    const now = new Date();
+    const estimatedDate = addMinutes(now, parseInt(pickupTime));
+    setEstimatedTime(format(estimatedDate, "h:mm a"));
+  }, [pickupTime]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
 
-    // Validate form based on payment method
+    // Validate delivery information if delivery is selected
+    if (deliveryMethod === "delivery") {
+      if (!address.trim()) {
+        toast({
+          title: "Error",
+          description: "Please enter your delivery address",
+          variant: "destructive",
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!phone.trim() || !/^\d{10}$/.test(phone.trim())) {
+        toast({
+          title: "Error",
+          description: "Please enter a valid 10-digit phone number",
+          variant: "destructive",
+        });
+        setIsProcessing(false);
+        return;
+      }
+    }
+
+    // Validate payment information
     if (paymentMethod === "upi" && !upiId) {
       toast({
         title: "Error",
@@ -84,138 +143,261 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       }
     }
 
-    // Simulate payment processing
-    setTimeout(() => {
+    try {
+      // Calculate pickup time
+      const now = new Date();
+      now.setMinutes(now.getMinutes() + parseInt(pickupTime));
+      const formattedPickupTime = now.toISOString();
+
+      // Prepare additional order details
+      const orderDetails = {
+        deliveryMethod,
+        paymentMethod,
+        address: deliveryMethod === "delivery" ? address : "",
+        phone: deliveryMethod === "delivery" ? phone : "",
+      };
+
+      // Submit order to database
+      const { orderId } = await submitOrder(
+        formattedPickupTime,
+        specialInstructions,
+        orderDetails,
+      );
+
+      // Simulate payment processing
+      setTimeout(() => {
+        setIsProcessing(false);
+        toast({
+          title: "Payment Successful",
+          description: `Your payment of ₹${total.toFixed(2)} has been processed successfully.`,
+        });
+        onSuccess(orderId);
+      }, 2000);
+    } catch (error) {
       setIsProcessing(false);
       toast({
-        title: "Payment Successful",
-        description: `Your payment of ₹${total.toFixed(2)} has been processed successfully.`,
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to process order",
+        variant: "destructive",
       });
-      clearCart();
-      onSuccess();
-    }, 2000);
+    }
   };
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Checkout</h2>
-      <div className="mb-4">
-        <div className="flex justify-between text-sm mb-1">
-          <span>Total Amount:</span>
-          <span className="font-bold">₹{total.toFixed(2)}</span>
-        </div>
-      </div>
-
-      <Separator className="my-4" />
-
+    <div className="bg-white p-6 rounded-lg shadow-md">
       <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <Label className="text-base font-medium">Select Payment Method</Label>
-          <RadioGroup
-            value={paymentMethod}
-            onValueChange={(value) => setPaymentMethod(value as "upi" | "card")}
-            className="mt-2 space-y-2"
-          >
-            <div className="flex items-center space-x-2 border rounded-md p-3 hover:bg-gray-50 cursor-pointer">
-              <RadioGroupItem value="upi" id="upi" />
-              <Label htmlFor="upi" className="flex items-center cursor-pointer">
-                <IndianRupee className="h-4 w-4 mr-2" />
-                UPI Payment
-              </Label>
-            </div>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as "order" | "payment")}
+        >
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="order">Order Details</TabsTrigger>
+            <TabsTrigger value="payment">Payment</TabsTrigger>
+          </TabsList>
 
-            <div className="flex items-center space-x-2 border rounded-md p-3 hover:bg-gray-50 cursor-pointer">
-              <RadioGroupItem value="card" id="card" />
-              <Label
-                htmlFor="card"
-                className="flex items-center cursor-pointer"
-              >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Credit/Debit Card
-              </Label>
-            </div>
-          </RadioGroup>
-        </div>
-
-        {paymentMethod === "upi" && (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="upi-id">UPI ID</Label>
-              <Input
-                id="upi-id"
-                placeholder="username@upi"
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-
-        {paymentMethod === "card" && (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="card-number">Card Number</Label>
-              <Input
-                id="card-number"
-                placeholder="1234 5678 9012 3456"
-                value={cardNumber}
-                onChange={(e) =>
-                  setCardNumber(e.target.value.replace(/\D/g, "").slice(0, 16))
+          <TabsContent value="order" className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Delivery Method</h3>
+              <RadioGroup
+                value={deliveryMethod}
+                onValueChange={(value) =>
+                  setDeliveryMethod(value as "pickup" | "delivery")
                 }
+                className="flex flex-col space-y-3"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="pickup" id="pickup" />
+                  <Label htmlFor="pickup" className="flex items-center gap-2">
+                    <Store className="h-4 w-4" /> Pickup
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="delivery" id="delivery" />
+                  <Label htmlFor="delivery" className="flex items-center gap-2">
+                    <Truck className="h-4 w-4" /> Delivery
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {deliveryMethod === "pickup" ? (
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Pickup Time</h3>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span>Ready in approximately:</span>
+                </div>
+                <Select value={pickupTime} onValueChange={setPickupTime}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select pickup time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="15">15 minutes</SelectItem>
+                    <SelectItem value="30">30 minutes</SelectItem>
+                    <SelectItem value="45">45 minutes</SelectItem>
+                    <SelectItem value="60">1 hour</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="text-sm text-gray-500">
+                  Estimated pickup time: {estimatedTime}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Delivery Information</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="address" className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" /> Delivery Address
+                  </Label>
+                  <Textarea
+                    id="address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Enter your full address"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="flex items-center gap-2">
+                    <Home className="h-4 w-4" /> Phone Number
+                  </Label>
+                  <Input
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="10-digit phone number"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="instructions">Special Instructions</Label>
+              <Textarea
+                id="instructions"
+                value={specialInstructions}
+                onChange={(e) => setSpecialInstructions(e.target.value)}
+                placeholder="Any special instructions for your order?"
               />
             </div>
 
-            <div>
-              <Label htmlFor="card-name">Cardholder Name</Label>
-              <Input
-                id="card-name"
-                placeholder="John Doe"
-                value={cardName}
-                onChange={(e) => setCardName(e.target.value)}
-              />
+            <Button
+              type="button"
+              onClick={() => setActiveTab("payment")}
+              className="w-full"
+            >
+              Continue to Payment
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="payment" className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Payment Method</h3>
+              <RadioGroup
+                value={paymentMethod}
+                onValueChange={(value) =>
+                  setPaymentMethod(value as "upi" | "card" | "cash")
+                }
+                className="flex flex-col space-y-3"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="upi" id="upi" />
+                  <Label htmlFor="upi" className="flex items-center gap-2">
+                    <IndianRupee className="h-4 w-4" /> UPI
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="card" id="card" />
+                  <Label htmlFor="card" className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" /> Credit/Debit Card
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="cash" id="cash" />
+                  <Label htmlFor="cash">Cash on Delivery/Pickup</Label>
+                </div>
+              </RadioGroup>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="card-expiry">Expiry Date</Label>
+            {paymentMethod === "upi" && (
+              <div className="space-y-2">
+                <Label htmlFor="upiId">UPI ID</Label>
                 <Input
-                  id="card-expiry"
-                  placeholder="MM/YY"
-                  value={cardExpiry}
-                  onChange={(e) => setCardExpiry(e.target.value)}
+                  id="upiId"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  placeholder="username@upi"
                 />
               </div>
+            )}
 
-              <div>
-                <Label htmlFor="card-cvv">CVV</Label>
-                <Input
-                  id="card-cvv"
-                  type="password"
-                  placeholder="123"
-                  value={cardCvv}
-                  onChange={(e) =>
-                    setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 3))
-                  }
-                />
+            {paymentMethod === "card" && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cardNumber">Card Number</Label>
+                  <Input
+                    id="cardNumber"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                    placeholder="1234 5678 9012 3456"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cardName">Cardholder Name</Label>
+                  <Input
+                    id="cardName"
+                    value={cardName}
+                    onChange={(e) => setCardName(e.target.value)}
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cardExpiry">Expiry Date</Label>
+                    <Input
+                      id="cardExpiry"
+                      value={cardExpiry}
+                      onChange={(e) => setCardExpiry(e.target.value)}
+                      placeholder="MM/YY"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cardCvv">CVV</Label>
+                    <Input
+                      id="cardCvv"
+                      value={cardCvv}
+                      onChange={(e) => setCardCvv(e.target.value)}
+                      placeholder="123"
+                    />
+                  </div>
+                </div>
               </div>
+            )}
+
+            <div className="space-y-4">
+              <Separator />
+              <div className="flex justify-between font-medium">
+                <span>Total Amount:</span>
+                <span>₹{total.toFixed(2)}</span>
+              </div>
+              <Separator />
             </div>
-          </div>
-        )}
 
-        <div className="mt-6 space-y-2">
-          <Button type="submit" className="w-full" disabled={isProcessing}>
-            {isProcessing ? "Processing..." : `Pay ₹${total.toFixed(2)}`}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={onCancel}
-            disabled={isProcessing}
-          >
-            Cancel
-          </Button>
-        </div>
+            <div className="flex gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setActiveTab("order")}
+                className="flex-1"
+              >
+                Back
+              </Button>
+              <Button type="submit" disabled={isProcessing} className="flex-1">
+                {isProcessing ? "Processing..." : "Place Order"}
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       </form>
     </div>
   );
